@@ -28,20 +28,22 @@ describe('SelectionAnchor', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     // jsdom does not implement Range.getBoundingClientRect — stub to a fixed box.
-    if (!(Range.prototype as unknown as { getBoundingClientRect?: unknown }).getBoundingClientRect) {
-      (Range.prototype as unknown as { getBoundingClientRect: () => DOMRect }).getBoundingClientRect =
-        () =>
-          ({
-            top: 10,
-            bottom: 20,
-            left: 30,
-            right: 40,
-            width: 10,
-            height: 10,
-            x: 30,
-            y: 10,
-            toJSON: () => ({}),
-          } as DOMRect);
+    const proto = Range.prototype as unknown as {
+      getBoundingClientRect?: () => DOMRect;
+    };
+    if (!proto.getBoundingClientRect) {
+      const stubRect: DOMRect = {
+        top: 10,
+        bottom: 20,
+        left: 30,
+        right: 40,
+        width: 10,
+        height: 10,
+        x: 30,
+        y: 10,
+        toJSON: () => ({}),
+      };
+      proto.getBoundingClientRect = () => stubRect;
     }
   });
 
