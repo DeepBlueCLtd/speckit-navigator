@@ -55,6 +55,34 @@ describe('persistence', () => {
     expect(keys.length).toBe(1);
   });
 
+  it('full draft lifecycle: write → reload → edit → reload → clear (T069)', () => {
+    // 1. Fresh draft set for PR 42.
+    writeDraftSet(makeSet(42, 'first-body'));
+
+    // 2. Reload: the set is present with the original body.
+    let loaded = readDraftSet(42);
+    expect(loaded?.comments.length).toBe(1);
+    expect(loaded?.comments[0]?.body).toBe('first-body');
+
+    // 3. Edit: mutate the set in place and write back.
+    const edited: DraftCommentSet = {
+      ...loaded!,
+      comments: [{ ...loaded!.comments[0]!, body: 'second-body' }],
+      lastModified: '2026-04-17T01:00:00Z',
+    };
+    writeDraftSet(edited);
+
+    // 4. Reload: the edited body is what comes back.
+    loaded = readDraftSet(42);
+    expect(loaded?.comments[0]?.body).toBe('second-body');
+    expect(loaded?.lastModified).toBe('2026-04-17T01:00:00Z');
+
+    // 5. Clear: the set is gone and the storage key is removed.
+    clearDraftSet(42);
+    expect(readDraftSet(42)).toBeNull();
+    expect(localStorage.getItem(keyFor(42))).toBeNull();
+  });
+
   it('raises QuotaExceededError when storage is full', () => {
     const proto = Object.getPrototypeOf(localStorage) as Storage;
     const original = proto.setItem;
