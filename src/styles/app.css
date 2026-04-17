@@ -48,7 +48,7 @@ body {
 
 .app-main {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 260px minmax(0, 1fr) auto;
   min-height: 0;
   overflow: hidden;
 }
@@ -56,7 +56,7 @@ body {
 @media (max-width: 720px) {
   .app-main {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto 1fr auto;
   }
   .app-tree {
     max-height: 40vh;
@@ -238,22 +238,32 @@ body {
   cursor: pointer;
 }
 
-/* drawer */
+/* drawer — lives in the app-main grid's third column so it shares
+   horizontal space with the artefact view rather than floating over it. */
 .drawer {
-  position: fixed;
-  right: 0;
-  top: 48px;
-  bottom: 0;
   width: 340px;
+  min-height: 0;
   background: var(--color-surface);
   border-left: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  z-index: 10;
 }
 
 .drawer.is-collapsed {
   width: 36px;
+}
+
+@media (max-width: 720px) {
+  .drawer {
+    width: 100%;
+    max-height: 40vh;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+  }
+  .drawer.is-collapsed {
+    width: 100%;
+    max-height: 48px;
+  }
 }
 
 .drawer-header {
