@@ -32,6 +32,29 @@ pnpm --filter @debrief/spec-navigator test      # Vitest unit tests
 node apps/spec-navigator/run-playwright.mjs     # Playwright E2E (cloud/CI)
 ```
 
+## Branch preview deploys
+
+A branch can be published alongside production for end-to-end testing without
+merging. Two trigger modes:
+
+- **Automatic**: push to any branch matching `preview/**` — the workflow runs
+  on paths `apps/spec-navigator/**` or the preview workflow file itself.
+- **Manual**: GitHub UI → Actions → *Preview Spec Navigator (branch)* →
+  **Run workflow** → pick the branch.
+
+URL pattern:
+
+```
+https://debrief.github.io/debrief-future/spec-navigator-preview/<slug>/?pr=<n>
+```
+
+`<slug>` is the branch name with non-`[A-Za-z0-9-]` characters replaced by
+`-`. Previews share the `gh-pages` branch with production under
+`keep_files: true` so this workflow never overwrites `/spec-navigator/`.
+Delete a preview by removing its folder from `gh-pages` directly.
+
+See `.github/workflows/spec-navigator-preview.yml`.
+
 ## Troubleshooting
 
 - **"Not authenticated"** — Open settings and paste a PAT. Permission scope
