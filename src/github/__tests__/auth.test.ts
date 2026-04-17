@@ -1,5 +1,12 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { getPat, setPat, clearPat, hasPat, _resetCacheForTests } from '../auth';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import {
+  getPat,
+  setPat,
+  clearPat,
+  hasPat,
+  subscribePat,
+  _resetCacheForTests,
+} from '../auth';
 
 describe('auth PAT storage', () => {
   beforeEach(() => {
@@ -41,5 +48,19 @@ describe('auth PAT storage', () => {
       const msg = e instanceof Error ? e.message : String(e);
       expect(msg).not.toContain('pat-that-should-not-leak');
     }
+  });
+
+  it('subscribePat fires on setPat and clearPat; unsubscribe stops delivery', () => {
+    const listener = vi.fn();
+    const unsub = subscribePat(listener);
+    setPat('first-pat');
+    expect(listener).toHaveBeenCalledTimes(1);
+    setPat('second-pat');
+    expect(listener).toHaveBeenCalledTimes(2);
+    clearPat();
+    expect(listener).toHaveBeenCalledTimes(3);
+    unsub();
+    setPat('after-unsubscribe');
+    expect(listener).toHaveBeenCalledTimes(3);
   });
 });
