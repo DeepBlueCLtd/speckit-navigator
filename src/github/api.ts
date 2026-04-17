@@ -9,10 +9,12 @@ import { strings } from '../strings';
 import { getPat } from './auth';
 import {
   PullRequestSchema,
+  PullRequestListSchema,
   ContentsListingSchema,
   IssueCommentCreateResponseSchema,
   ChangedFilesSchema,
   type PullRequest,
+  type PullRequestSummary,
   type ContentsEntry,
   type IssueCommentCreateResponse,
 } from './schemas';
@@ -121,6 +123,24 @@ export async function fetchPullRequest(
     `${API_BASE}/repos/${owner}/${repo}/pulls/${prNumber}`,
     { method: 'GET', headers: authHeaders() },
     PullRequestSchema,
+  );
+}
+
+/**
+ * List open pull requests — used by the "did you mean…?" offer when the
+ * user's `?pr=` number 404s. Sorted newest-first (GitHub's default), capped
+ * at 100 per page (the API's maximum); we don't paginate because offering
+ * >100 open PRs in a dropdown would be unusable anyway.
+ */
+export async function fetchOpenPullRequests(
+  opts: ApiOptions = {},
+): Promise<PullRequestSummary[]> {
+  const owner = opts.owner ?? DEFAULT_OWNER;
+  const repo = opts.repo ?? DEFAULT_REPO;
+  return request(
+    `${API_BASE}/repos/${owner}/${repo}/pulls?state=open&per_page=100&sort=updated&direction=desc`,
+    { method: 'GET', headers: authHeaders() },
+    PullRequestListSchema,
   );
 }
 

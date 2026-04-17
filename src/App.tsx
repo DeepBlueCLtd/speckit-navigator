@@ -7,6 +7,8 @@ import { SubmitButton } from './components/SubmitButton';
 import { SettingsPanel } from './components/SettingsPanel';
 import { CommentComposer } from './components/CommentComposer';
 import { ErrorBanner } from './components/ErrorBanner';
+import { OpenPrList } from './components/OpenPrList';
+import { SpecBrowserModal } from './components/SpecBrowserModal';
 import { useFeature } from './state/useFeature';
 import { useComments } from './state/useComments';
 import { hasPat } from './github/auth';
@@ -24,6 +26,7 @@ function parsePrNumber(): number | null {
 export function App(): JSX.Element {
   const [prNumber] = useState<number | null>(() => parsePrNumber());
   const [settingsOpen, setSettingsOpen] = useState<boolean>(() => !hasPat());
+  const [specBrowserOpen, setSpecBrowserOpen] = useState<boolean>(false);
   const [composerOpen, setComposerOpen] = useState<boolean>(false);
   const [composerLevel, setComposerLevel] = useState<'feature' | 'document' | 'selection'>('feature');
   const [composerPath, setComposerPath] = useState<string | undefined>(undefined);
@@ -49,6 +52,17 @@ export function App(): JSX.Element {
       <div className="app-missing-pr">
         <h1>{strings.app.title}</h1>
         <p>{strings.errors.noPrParam}</p>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => setSpecBrowserOpen(true)}
+          data-testid="spec-browser-open-no-pr"
+        >
+          {strings.specBrowser.openButton}
+        </button>
+        {specBrowserOpen && (
+          <SpecBrowserModal onClose={() => setSpecBrowserOpen(false)} />
+        )}
       </div>
     );
   }
@@ -105,6 +119,14 @@ export function App(): JSX.Element {
           />
           <button
             type="button"
+            className="btn btn-secondary"
+            onClick={() => setSpecBrowserOpen(true)}
+            data-testid="spec-browser-open"
+          >
+            {strings.specBrowser.openButton}
+          </button>
+          <button
+            type="button"
             className="btn btn-icon"
             aria-label={strings.buttons.openSettings}
             onClick={() => setSettingsOpen((s) => !s)}
@@ -114,7 +136,12 @@ export function App(): JSX.Element {
           </button>
         </div>
       </header>
-      {feature.error && <ErrorBanner message={feature.error} />}
+      {feature.error && (
+        <>
+          <ErrorBanner message={feature.error.message} />
+          {feature.error.kind === 'pr-not-found' && hasPat() && <OpenPrList />}
+        </>
+      )}
       <main className="app-main">
         <aside className="app-tree">
           <ArtifactTree
@@ -170,6 +197,9 @@ export function App(): JSX.Element {
         />
       )}
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+      {specBrowserOpen && (
+        <SpecBrowserModal onClose={() => setSpecBrowserOpen(false)} />
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Artefact, FeatureScope } from '../types';
+import type { Artefact, AppError, FeatureScope } from '../types';
 import { classifyArtefact, mimeTypeFromPath } from '../format/classifyArtefact';
 import {
   ApiError,
@@ -14,7 +14,7 @@ export interface UseFeatureResult {
   scope: FeatureScope | null;
   artefacts: Artefact[];
   loading: boolean;
-  error: string | null;
+  error: AppError | null;
 }
 
 const FEATURE_FOLDER_RE = /^(specs\/\d{3,}-[a-z0-9-]+)\//;
@@ -70,7 +70,7 @@ export function useFeature(prNumber: number | null): UseFeatureResult {
   const [scope, setScope] = useState<FeatureScope | null>(null);
   const [artefacts, setArtefacts] = useState<Artefact[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AppError | null>(null);
   // Bump this counter whenever the PAT changes so the fetch effect re-runs.
   const [patVersion, setPatVersion] = useState<number>(0);
 
@@ -82,7 +82,10 @@ export function useFeature(prNumber: number | null): UseFeatureResult {
   useEffect(() => {
     if (prNumber === null) return;
     if (!hasPat()) {
-      setError(strings.errors.notAuthenticated);
+      setError({
+        kind: 'credential-missing',
+        message: strings.errors.notAuthenticated,
+      });
       return;
     }
     let cancelled = false;
@@ -96,7 +99,10 @@ export function useFeature(prNumber: number | null): UseFeatureResult {
         const folder = pickFeatureFolder(changedFiles);
         if (!folder) {
           if (!cancelled) {
-            setError(strings.errors.noFeatureFolder);
+            setError({
+              kind: 'no-feature-folder',
+              message: strings.errors.noFeatureFolder,
+            });
             setLoading(false);
           }
           return;
@@ -116,9 +122,9 @@ export function useFeature(prNumber: number | null): UseFeatureResult {
       } catch (e) {
         if (cancelled) return;
         if (e instanceof ApiError) {
-          setError(e.message);
+          setError({ kind: e.kind, message: e.message });
         } else {
-          setError(strings.errors.unknown);
+          setError({ kind: 'unknown', message: strings.errors.unknown });
         }
         setLoading(false);
       }

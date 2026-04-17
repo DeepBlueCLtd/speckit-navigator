@@ -63,3 +63,25 @@ export const ChangedFileSchema = z
   .passthrough();
 
 export const ChangedFilesSchema = z.array(ChangedFileSchema);
+
+/**
+ * Summary form of a PR returned by `GET /repos/:owner/:repo/pulls`.
+ * Narrower than a full PullRequest — we only need `number`, `title`, and
+ * the head branch ref to offer a "did you mean…?" list when the user
+ * typed a bad `?pr=` number.
+ */
+export const PullRequestSummarySchema = z
+  .object({
+    number: z.number().int().positive(),
+    title: z.string(),
+    head: z
+      .object({
+        ref: z.string().min(1),
+      })
+      .passthrough(),
+  })
+  .passthrough();
+
+export const PullRequestListSchema = z.array(PullRequestSummarySchema);
+
+export type PullRequestSummary = z.infer<typeof PullRequestSummarySchema>;

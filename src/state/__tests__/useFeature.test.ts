@@ -75,7 +75,8 @@ describe('useFeature', () => {
     await waitFor(() => {
       expect(result.current.error).toBeTruthy();
     });
-    expect(result.current.error).toContain('Not authenticated');
+    expect(result.current.error?.kind).toBe('credential-missing');
+    expect(result.current.error?.message).toContain('Not authenticated');
   });
 
   it('re-fetches after setPat clears the notAuthenticated error', async () => {
@@ -222,11 +223,12 @@ describe('useFeature', () => {
       expect(result.current.loading).toBe(false);
       expect(result.current.error).toBeTruthy();
     });
-    expect(result.current.error).toContain('No feature folder');
+    expect(result.current.error?.kind).toBe('no-feature-folder');
+    expect(result.current.error?.message).toContain('No feature folder');
     expect(result.current.scope).toBeNull();
   });
 
-  it('surfaces pr-not-found error when GitHub returns 404', async () => {
+  it('surfaces pr-not-found error with kind=pr-not-found when GitHub returns 404', async () => {
     mockFetchByUrl(() => ({
       status: 404,
       body: { message: 'Not Found' },
@@ -235,6 +237,7 @@ describe('useFeature', () => {
     await waitFor(() => {
       expect(result.current.error).toBeTruthy();
     });
-    expect(result.current.error).toContain('not found');
+    expect(result.current.error?.kind).toBe('pr-not-found');
+    expect(result.current.error?.message).toContain('not found');
   });
 });

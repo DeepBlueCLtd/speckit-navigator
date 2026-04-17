@@ -93,4 +93,16 @@ export const strings = {
   errorBanner: {
     retry: 'Retry',
   },
+  openPrList: {
+    heading: 'Did you mean one of these open pull requests?',
+    loading: 'Looking up open pull requests…',
+    empty: 'No open pull requests on debrief/debrief-future.',
+    failed: 'Could not load the list of open pull requests.',
+  },
+  specBrowser: {
+    openButton: 'Browse open PRs',
+    modalTitle: 'Open pull requests on debrief/debrief-future',
+    closeButton: 'Close',
+    authRequired: 'A GitHub token is required to list open pull requests. Open settings first.',
+  },
 } as const;

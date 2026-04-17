@@ -60,7 +60,8 @@ describe('soft-gap surfaces', () => {
     await waitFor(() => {
       expect(result.current.error).toBeTruthy();
     });
-    expect(result.current.error).toContain('No feature folder');
+    expect(result.current.error?.kind).toBe('no-feature-folder');
+    expect(result.current.error?.message).toContain('No feature folder');
   });
 
   it('QuotaExceededError from persistence does not leave memory state corrupted', () => {

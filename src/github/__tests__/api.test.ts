@@ -3,6 +3,7 @@ import {
   fetchPullRequest,
   fetchChangedFiles,
   fetchContentsListing,
+  fetchOpenPullRequests,
   fetchRawText,
   createIssueComment,
   ApiError,
@@ -131,6 +132,37 @@ describe('github/api error mapping (T084)', () => {
     await expect(
       fetchContentsListing('specs/191-spec-navigator', 'a'.repeat(40)),
     ).rejects.toMatchObject({ kind: 'pr-not-found' });
+  });
+
+  it('fetchOpenPullRequests hits the open-state list endpoint and narrows the payload', async () => {
+    const spy = vi.fn(async () =>
+      new Response(
+        JSON.stringify([
+          {
+            number: 100,
+            title: 'First PR',
+            state: 'open',
+            head: { ref: 'feat/a', sha: 'a'.repeat(40) },
+            body: 'ignored',
+          },
+          {
+            number: 101,
+            title: 'Second PR',
+            state: 'open',
+            head: { ref: 'feat/b', sha: 'b'.repeat(40) },
+          },
+        ]),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', spy);
+    const list = await fetchOpenPullRequests();
+    expect(list.length).toBe(2);
+    expect(list[0].number).toBe(100);
+    expect(list[0].head.ref).toBe('feat/a');
+    const [url] = spy.mock.calls[0];
+    expect(String(url)).toContain('/pulls?state=open');
+    expect(String(url)).toContain('per_page=100');
   });
 
   it('fetchRawText does NOT send Authorization to raw.githubusercontent.com', async () => {
