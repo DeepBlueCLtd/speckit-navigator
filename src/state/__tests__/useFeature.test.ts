@@ -78,6 +78,58 @@ describe('useFeature', () => {
     expect(result.current.error).toContain('Not authenticated');
   });
 
+  it('re-fetches after setPat clears the notAuthenticated error', async () => {
+    clearPat();
+    _resetCacheForTests();
+    mockFetchByUrl((url) => {
+      if (url.endsWith('/pulls/42')) {
+        return {
+          status: 200,
+          body: {
+            number: 42,
+            state: 'open',
+            title: 't',
+            head: { sha: SHA, ref: 'feat' },
+          },
+        };
+      }
+      if (url.includes('/pulls/42/files')) {
+        return {
+          status: 200,
+          body: [
+            { filename: 'specs/191-spec-navigator/spec.md', status: 'modified' },
+          ],
+        };
+      }
+      if (url.includes('/contents/specs/191-spec-navigator?ref=')) {
+        return {
+          status: 200,
+          body: [
+            {
+              name: 'spec.md',
+              path: 'specs/191-spec-navigator/spec.md',
+              type: 'file',
+              size: 100,
+              download_url: 'https://raw.githubusercontent.com/x/y/z/spec.md',
+            },
+          ],
+        };
+      }
+      return null;
+    });
+    const { result } = renderHook(() => useFeature(42));
+    await waitFor(() => {
+      expect(result.current.error).toBeTruthy();
+    });
+    // User saves a PAT — effect must re-run and clear the error.
+    setPat('late-arrival-pat');
+    await waitFor(() => {
+      expect(result.current.scope).not.toBeNull();
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.artefacts.length).toBe(1);
+  });
+
   it('resolves scope + artefacts for a PR that touches a feature folder', async () => {
     mockFetchByUrl((url) => {
       if (url.endsWith('/pulls/42')) {

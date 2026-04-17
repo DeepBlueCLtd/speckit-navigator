@@ -9,6 +9,26 @@ const KEY = 'spec-navigator:github-pat';
 
 let cached: Credential | null | undefined = undefined;
 
+type Listener = () => void;
+const listeners = new Set<Listener>();
+
+function notify(): void {
+  for (const l of listeners) l();
+}
+
+/**
+ * Subscribe to PAT changes (set/clear) within this tab. Returns an
+ * unsubscribe function. Storage events across tabs are not proxied here —
+ * if needed, a future callsite can bridge `window.addEventListener('storage', …)`
+ * to `notify()`.
+ */
+export function subscribePat(listener: Listener): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
 function readStorage(): Credential | null {
   if (cached !== undefined) return cached;
   try {
@@ -51,11 +71,13 @@ export function setPat(pat: string): void {
   const cred: Credential = { pat: pat.trim(), savedAt: new Date().toISOString() };
   localStorage.setItem(KEY, JSON.stringify(cred));
   cached = cred;
+  notify();
 }
 
 export function clearPat(): void {
   localStorage.removeItem(KEY);
   cached = null;
+  notify();
 }
 
 /**

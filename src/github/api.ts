@@ -153,6 +153,18 @@ export async function fetchChangedFiles(
   return res.map((f) => f.filename);
 }
 
+/**
+ * Headers for raw.githubusercontent.com. We intentionally do NOT send
+ * Authorization here: raw.githubusercontent.com answers the CORS
+ * preflight for a plain GET but refuses one with the Authorization
+ * header, so sending the PAT actively breaks the fetch. The repo is
+ * public, so unauthenticated GETs resolve. Private-repo support would
+ * require routing through the Contents API (base64-encoded bodies).
+ */
+function rawHeaders(): Headers {
+  return new Headers({ Accept: 'text/plain, */*' });
+}
+
 export async function fetchRawText(
   path: string,
   sha: string,
@@ -166,7 +178,7 @@ export async function fetchRawText(
     .join('/')}`;
   let response: Response;
   try {
-    response = await fetch(url, { headers: authHeaders() });
+    response = await fetch(url, { headers: rawHeaders() });
   } catch {
     throw new ApiError('network', errorMessage('network'));
   }
@@ -190,7 +202,7 @@ export async function fetchRawBlob(
     .join('/')}`;
   let response: Response;
   try {
-    response = await fetch(url, { headers: authHeaders() });
+    response = await fetch(url, { headers: rawHeaders() });
   } catch {
     throw new ApiError('network', errorMessage('network'));
   }

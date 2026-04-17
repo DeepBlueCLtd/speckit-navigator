@@ -3,6 +3,7 @@ import {
   fetchPullRequest,
   fetchChangedFiles,
   fetchContentsListing,
+  fetchRawText,
   createIssueComment,
   ApiError,
 } from '../api';
@@ -130,5 +131,23 @@ describe('github/api error mapping (T084)', () => {
     await expect(
       fetchContentsListing('specs/191-spec-navigator', 'a'.repeat(40)),
     ).rejects.toMatchObject({ kind: 'pr-not-found' });
+  });
+
+  it('fetchRawText does NOT send Authorization to raw.githubusercontent.com', async () => {
+    // raw.githubusercontent.com rejects the CORS preflight when the
+    // request carries an Authorization header. Public repos resolve
+    // without it; private-repo support is via the Contents API instead.
+    const spy = vi.fn(async () => new Response('hello', { status: 200 }));
+    vi.stubGlobal('fetch', spy);
+    const text = await fetchRawText('specs/191-spec-navigator/spec.md', 'a'.repeat(40));
+    expect(text).toBe('hello');
+    const [url, init] = spy.mock.calls[0];
+    expect(String(url)).toContain('raw.githubusercontent.com');
+    const headers = init?.headers as Headers;
+    expect(headers.has('Authorization')).toBe(false);
+    // The PAT must not appear in any header value either.
+    for (const [, value] of headers.entries()) {
+      expect(value).not.toContain(SECRET_PAT);
+    }
   });
 });

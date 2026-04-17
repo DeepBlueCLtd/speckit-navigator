@@ -7,7 +7,7 @@ import {
   fetchContentsListing,
   fetchPullRequest,
 } from '../github/api';
-import { hasPat } from '../github/auth';
+import { hasPat, subscribePat } from '../github/auth';
 import { strings } from '../strings';
 
 export interface UseFeatureResult {
@@ -71,6 +71,13 @@ export function useFeature(prNumber: number | null): UseFeatureResult {
   const [artefacts, setArtefacts] = useState<Artefact[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  // Bump this counter whenever the PAT changes so the fetch effect re-runs.
+  const [patVersion, setPatVersion] = useState<number>(0);
+
+  useEffect(() => {
+    const unsub = subscribePat(() => setPatVersion((v) => v + 1));
+    return unsub;
+  }, []);
 
   useEffect(() => {
     if (prNumber === null) return;
@@ -120,7 +127,7 @@ export function useFeature(prNumber: number | null): UseFeatureResult {
     return () => {
       cancelled = true;
     };
-  }, [prNumber]);
+  }, [prNumber, patVersion]);
 
   return { scope, artefacts, loading, error };
 }
