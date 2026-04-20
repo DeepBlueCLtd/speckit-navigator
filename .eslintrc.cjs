@@ -1,3 +1,5 @@
+const { rules: utilsDriftRules } = require('../../shared/eslint-rules/no-redeclare-utils-exports.cjs');
+
 module.exports = {
   root: true,
   env: {
@@ -38,5 +40,6 @@ module.exports = {
       },
     ],
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    'no-restricted-syntax': ['error', ...utilsDriftRules],
   },
 };
