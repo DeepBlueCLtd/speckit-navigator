@@ -16,6 +16,8 @@ export const strings = {
     submit: 'Submit feedback',
     submitting: 'Submitting…',
     submitAnyway: 'Submit anyway',
+    copyFeedback: 'Copy feedback for PR',
+    copyFeedbackCopied: 'Copied — paste it as a PR comment',
     cancel: 'Cancel',
     save: 'Save',
     edit: 'Edit',
@@ -31,6 +33,7 @@ export const strings = {
     hide: 'Hide',
     toggleRaw: 'Show raw source',
     toggleRendered: 'Show rendered',
+    dismissReadOnlyHint: 'Dismiss',
   },
   composer: {
     placeholderBody: 'Describe your feedback…',
@@ -75,7 +78,8 @@ export const strings = {
   },
   errors: {
     noPrParam: 'No ?pr=<number> in the URL. Ask for the navigator link from the PR body.',
-    notAuthenticated: 'Not authenticated. Open settings and configure a GitHub token.',
+    notAuthenticated:
+      'A GitHub token is required to submit feedback directly. Open settings to configure one, or use "Copy feedback for PR" to paste it as a PR comment yourself.',
     credentialRejected: 'Credential rejected by GitHub. Open settings and re-check your token.',
     prNotFound: 'Pull request not found or your token cannot see it.',
     rateLimit: 'GitHub rate limit hit — try again later.',
@@ -104,5 +108,9 @@ export const strings = {
     modalTitle: 'Open pull requests on debrief/debrief-future',
     closeButton: 'Close',
     authRequired: 'A GitHub token is required to list open pull requests. Open settings first.',
+  },
+  readOnlyHint: {
+    message:
+      'Read-only mode: reads use GitHub\'s public API (60 requests/hr per IP). Configure a token in settings to submit feedback directly and raise the limit.',
   },
 } as const;

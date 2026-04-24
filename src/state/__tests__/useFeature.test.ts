@@ -68,18 +68,7 @@ describe('useFeature', () => {
     vi.unstubAllGlobals();
   });
 
-  it('surfaces notAuthenticated error when no PAT is configured', async () => {
-    clearPat();
-    _resetCacheForTests();
-    const { result } = renderHook(() => useFeature(42));
-    await waitFor(() => {
-      expect(result.current.error).toBeTruthy();
-    });
-    expect(result.current.error?.kind).toBe('credential-missing');
-    expect(result.current.error?.message).toContain('Not authenticated');
-  });
-
-  it('re-fetches after setPat clears the notAuthenticated error', async () => {
+  it('fetches artefacts unauthenticated when no PAT is configured (read-only mode)', async () => {
     clearPat();
     _resetCacheForTests();
     mockFetchByUrl((url) => {
@@ -120,15 +109,62 @@ describe('useFeature', () => {
     });
     const { result } = renderHook(() => useFeature(42));
     await waitFor(() => {
-      expect(result.current.error).toBeTruthy();
-    });
-    // User saves a PAT — effect must re-run and clear the error.
-    setPat('late-arrival-pat');
-    await waitFor(() => {
       expect(result.current.scope).not.toBeNull();
     });
     expect(result.current.error).toBeNull();
     expect(result.current.artefacts.length).toBe(1);
+  });
+
+  it('re-fetches after setPat changes (e.g. user adds a PAT to recover from rate-limit)', async () => {
+    let firstCalled = false;
+    mockFetchByUrl((url) => {
+      if (url.endsWith('/pulls/42')) {
+        firstCalled = true;
+        return {
+          status: 200,
+          body: {
+            number: 42,
+            state: 'open',
+            title: 't',
+            head: { sha: SHA, ref: 'feat' },
+          },
+        };
+      }
+      if (url.includes('/pulls/42/files')) {
+        return {
+          status: 200,
+          body: [
+            { filename: 'specs/191-spec-navigator/spec.md', status: 'modified' },
+          ],
+        };
+      }
+      if (url.includes('/contents/specs/191-spec-navigator?ref=')) {
+        return {
+          status: 200,
+          body: [
+            {
+              name: 'spec.md',
+              path: 'specs/191-spec-navigator/spec.md',
+              type: 'file',
+              size: 100,
+              download_url: 'https://raw.githubusercontent.com/x/y/z/spec.md',
+            },
+          ],
+        };
+      }
+      return null;
+    });
+    const { result } = renderHook(() => useFeature(42));
+    await waitFor(() => {
+      expect(result.current.scope).not.toBeNull();
+    });
+    expect(firstCalled).toBe(true);
+    expect(result.current.artefacts.length).toBe(1);
+    // Changing the PAT should trigger a re-fetch (subscribePat effect).
+    setPat('late-arrival-pat');
+    await waitFor(() => {
+      expect(result.current.artefacts.length).toBe(1);
+    });
   });
 
   it('resolves scope + artefacts for a PR that touches a feature folder', async () => {

@@ -29,11 +29,11 @@ test.beforeAll(() => {
   mkdirSync(SHOTS_DIR, { recursive: true });
 });
 
-test('capture: landing (no PAT, Settings open)', async ({ page }) => {
+test('capture: landing (no PAT, read-only hint)', async ({ page }) => {
   await useMockGithubApi(page, 'stable-head');
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`/?pr=${MOCK_PR_NUMBER}`);
-  await page.waitForSelector('[data-testid="settings-panel"]');
+  await page.waitForSelector('[data-testid="read-only-hint"]');
   await page.screenshot({ path: resolve(SHOTS_DIR, 'landing.png'), fullPage: true });
 });
 
@@ -41,6 +41,7 @@ test('capture: settings panel (PAT revealed)', async ({ page }) => {
   await useMockGithubApi(page, 'stable-head');
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`/?pr=${MOCK_PR_NUMBER}`);
+  await page.getByTestId('settings-toggle').click();
   await page.waitForSelector('[data-testid="settings-panel"]');
   await page.getByTestId('settings-pat-input').fill('github_pat_example_token');
   await page.getByTestId('settings-reveal').click();

@@ -7,7 +7,7 @@ import {
   fetchContentsListing,
   fetchPullRequest,
 } from '../github/api';
-import { hasPat, subscribePat } from '../github/auth';
+import { subscribePat } from '../github/auth';
 import { strings } from '../strings';
 
 export interface UseFeatureResult {
@@ -81,13 +81,6 @@ export function useFeature(prNumber: number | null): UseFeatureResult {
 
   useEffect(() => {
     if (prNumber === null) return;
-    if (!hasPat()) {
-      setError({
-        kind: 'credential-missing',
-        message: strings.errors.notAuthenticated,
-      });
-      return;
-    }
     let cancelled = false;
     setLoading(true);
     setError(null);

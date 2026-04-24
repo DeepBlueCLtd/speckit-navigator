@@ -92,9 +92,6 @@ async function request<T>(
   init: RequestInit,
   schema: z.ZodSchema<T>,
 ): Promise<T> {
-  if (!getPat()) {
-    throw new ApiError('credential-missing', errorMessage('credential-missing'));
-  }
   let response: Response;
   try {
     response = await fetch(url, init);
@@ -238,6 +235,9 @@ export async function createIssueComment(
   body: string,
   opts: ApiOptions = {},
 ): Promise<IssueCommentCreateResponse> {
+  if (!getPat()) {
+    throw new ApiError('credential-missing', errorMessage('credential-missing'));
+  }
   const owner = opts.owner ?? DEFAULT_OWNER;
   const repo = opts.repo ?? DEFAULT_REPO;
   const headers = authHeaders();

@@ -149,6 +149,49 @@ describe('SubmitButton', () => {
     });
   });
 
+  it('renders the Copy-feedback button (no direct submit) when no PAT is stored', () => {
+    clearPat();
+    _resetCacheForTests();
+    render(
+      <SubmitButton
+        prNumber={42}
+        comments={[sampleComment]}
+        originalHeadSha={ORIGINAL_SHA}
+        onSuccess={() => {}}
+      />,
+    );
+    expect(screen.getByTestId('copy-feedback-button')).toBeTruthy();
+    expect(screen.queryByTestId('submit-button')).toBeNull();
+  });
+
+  it('Copy button writes the rendered markdown to the clipboard and flips to copied-state copy', async () => {
+    clearPat();
+    _resetCacheForTests();
+    const writeText = vi.fn(async () => undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    const onSuccess = vi.fn();
+    render(
+      <SubmitButton
+        prNumber={42}
+        comments={[sampleComment]}
+        originalHeadSha={ORIGINAL_SHA}
+        onSuccess={onSuccess}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('copy-feedback-button'));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledOnce();
+    });
+    const body = writeText.mock.calls[0][0] as string;
+    expect(body).toContain('spec-review-feedback-v1');
+    expect(body).toContain('A test comment');
+    // Copy must not clear drafts — only a server-round-tripped submit does that.
+    expect(onSuccess).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByTestId('copy-feedback-button').textContent).toContain('Copied');
+    });
+  });
+
   afterEach(() => {
     clearPat();
     vi.unstubAllGlobals();

@@ -11,8 +11,10 @@ import { OpenPrList } from './components/OpenPrList';
 import { SpecBrowserModal } from './components/SpecBrowserModal';
 import { useFeature } from './state/useFeature';
 import { useComments } from './state/useComments';
-import { hasPat } from './github/auth';
+import { hasPat, subscribePat } from './github/auth';
 import type { Artefact, Comment, SelectionContext } from './types';
+
+const READ_ONLY_HINT_DISMISSED_KEY = 'spec-navigator:read-only-hint-dismissed';
 
 function parsePrNumber(): number | null {
   const params = new URLSearchParams(window.location.search);
@@ -25,7 +27,7 @@ function parsePrNumber(): number | null {
 
 export function App(): JSX.Element {
   const [prNumber] = useState<number | null>(() => parsePrNumber());
-  const [settingsOpen, setSettingsOpen] = useState<boolean>(() => !hasPat());
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [specBrowserOpen, setSpecBrowserOpen] = useState<boolean>(false);
   const [composerOpen, setComposerOpen] = useState<boolean>(false);
   const [composerLevel, setComposerLevel] = useState<'feature' | 'document' | 'selection'>('feature');
@@ -33,9 +35,24 @@ export function App(): JSX.Element {
   const [composerSelection, setComposerSelection] = useState<SelectionContext | undefined>(undefined);
   const [composerEditing, setComposerEditing] = useState<Comment | undefined>(undefined);
   const [selectedPath, setSelectedPath] = useState<string | undefined>(undefined);
+  const [patPresent, setPatPresent] = useState<boolean>(() => hasPat());
+  const [readOnlyHintDismissed, setReadOnlyHintDismissed] = useState<boolean>(
+    () => localStorage.getItem(READ_ONLY_HINT_DISMISSED_KEY) === '1',
+  );
+
+  useEffect(() => {
+    return subscribePat(() => setPatPresent(hasPat()));
+  }, []);
 
   const feature = useFeature(prNumber);
   const comments = useComments(prNumber, feature.scope?.headSha);
+
+  const dismissReadOnlyHint = (): void => {
+    localStorage.setItem(READ_ONLY_HINT_DISMISSED_KEY, '1');
+    setReadOnlyHintDismissed(true);
+  };
+
+  const showReadOnlyHint = !patPresent && !readOnlyHintDismissed;
 
   useEffect(() => {
     if (!selectedPath && feature.artefacts.length > 0) {
@@ -136,10 +153,28 @@ export function App(): JSX.Element {
           </button>
         </div>
       </header>
+      {showReadOnlyHint && (
+        <div
+          className="read-only-hint"
+          role="status"
+          data-testid="read-only-hint"
+        >
+          <span>{strings.readOnlyHint.message}</span>
+          <button
+            type="button"
+            className="btn btn-icon"
+            aria-label={strings.buttons.dismissReadOnlyHint}
+            onClick={dismissReadOnlyHint}
+            data-testid="read-only-hint-dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
       {feature.error && (
         <>
           <ErrorBanner message={feature.error.message} />
-          {feature.error.kind === 'pr-not-found' && hasPat() && <OpenPrList />}
+          {feature.error.kind === 'pr-not-found' && <OpenPrList />}
         </>
       )}
       <main className="app-main">

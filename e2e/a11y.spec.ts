@@ -17,10 +17,11 @@ for (const vp of VIEWPORTS) {
       await page.setViewportSize({ width: vp.width, height: vp.height });
     });
 
-    test('empty drawer (no PAT, Settings open) has zero WCAG AA violations', async ({ page }) => {
+    test('read-only mode (no PAT, hint visible) has zero WCAG AA violations', async ({ page }) => {
       await useMockGithubApi(page, 'stable-head');
       await page.goto(`/?pr=${MOCK_PR_NUMBER}`);
-      await expect(page.getByTestId('settings-panel')).toBeVisible();
+      await expect(page.getByTestId('read-only-hint')).toBeVisible();
+      await expect(page.getByTestId('copy-feedback-button')).toBeVisible();
       const result = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
         .analyze();

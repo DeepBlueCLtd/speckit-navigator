@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { strings } from '../strings';
-import { hasPat } from '../github/auth';
 import { OpenPrList } from './OpenPrList';
 
 interface Props {
@@ -42,11 +41,7 @@ export function SpecBrowserModal({ onClose }: Props): JSX.Element {
             {strings.specBrowser.closeButton}
           </button>
         </div>
-        {hasPat() ? (
-          <OpenPrList />
-        ) : (
-          <p className="open-pr-list-status">{strings.specBrowser.authRequired}</p>
-        )}
+        <OpenPrList />
       </div>
     </div>
   );

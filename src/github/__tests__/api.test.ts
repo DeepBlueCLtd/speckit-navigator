@@ -90,10 +90,32 @@ describe('github/api error mapping (T084)', () => {
     await expect(fetchPullRequest(42)).rejects.toMatchObject({ kind: 'network' });
   });
 
-  it('credential-missing when no PAT is configured', async () => {
+  it('reads are allowed unauthenticated (no Authorization header) and proceed on 200', async () => {
     clearPat();
     _resetCacheForTests();
-    await expect(fetchPullRequest(42)).rejects.toMatchObject({
+    const spy = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          number: 42,
+          state: 'open',
+          title: 't',
+          head: { sha: 'a'.repeat(40), ref: 'feat' },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', spy);
+    const pr = await fetchPullRequest(42);
+    expect(pr.number).toBe(42);
+    const [, init] = spy.mock.calls[0];
+    const headers = init?.headers as Headers;
+    expect(headers.has('Authorization')).toBe(false);
+  });
+
+  it('createIssueComment still rejects with credential-missing when no PAT is configured', async () => {
+    clearPat();
+    _resetCacheForTests();
+    await expect(createIssueComment(42, 'body')).rejects.toMatchObject({
       kind: 'credential-missing',
     });
   });

@@ -29,7 +29,7 @@ test('axe: capture all states × viewports', async ({ browser }) => {
     prepare: (page: import('@playwright/test').Page) => Promise<void>;
   }> = [
     {
-      name: 'empty-drawer-settings-open',
+      name: 'empty-drawer-read-only-hint',
       seedPat: false,
       scenario: 'stable-head',
       prepare: async () => {},
@@ -78,7 +78,7 @@ test('axe: capture all states × viewports', async ({ browser }) => {
       if (s.seedPat) {
         await page.waitForSelector('[data-testid="markdown-body"]');
       } else {
-        await page.waitForSelector('[data-testid="settings-panel"]');
+        await page.waitForSelector('[data-testid="read-only-hint"]');
       }
       await s.prepare(page);
       const res = await new AxeBuilder({ page })

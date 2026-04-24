@@ -15,9 +15,20 @@ describe('SpecBrowserModal', () => {
     vi.unstubAllGlobals();
   });
 
-  it('shows the auth-required message when no PAT is set', () => {
+  it('renders the OpenPrList even when no PAT is set (read-only mode)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify([{ number: 7, title: 'Unauth example', head: { ref: 'feat/unauth' } }]),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      ),
+    );
     render(<SpecBrowserModal onClose={() => {}} />);
-    expect(screen.getByText(/GitHub token is required/)).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByTestId('open-pr-link-7')).toBeTruthy();
+    });
   });
 
   it('renders the OpenPrList when a PAT is configured', async () => {

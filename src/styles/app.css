@@ -435,6 +435,21 @@ body {
   font-size: 12px;
 }
 
+/* read-only hint — shown when no PAT is stored, dismissible */
+.read-only-hint {
+  background: var(--color-warning);
+  color: var(--color-primary-text);
+  padding: var(--space-2) var(--space-4);
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  font-size: 13px;
+}
+
+.read-only-hint > span {
+  flex: 1;
+}
+
 /* success panel */
 .success-panel {
   background: var(--color-success);
