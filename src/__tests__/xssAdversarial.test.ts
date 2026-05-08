@@ -3,11 +3,12 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
 import { MarkdownView } from '../components/MarkdownView';
 import type { FeatureScope } from '../types';
+import { DEFAULT_OWNER, DEFAULT_REPO } from '../defaults';
 
 const SCOPE: FeatureScope = {
   prNumber: 1,
-  repoOwner: 'debrief',
-  repoName: 'debrief-future',
+  repoOwner: DEFAULT_OWNER,
+  repoName: DEFAULT_REPO,
   headSha: '0'.repeat(40),
   featureFolder: 'specs/191-spec-navigator',
 };

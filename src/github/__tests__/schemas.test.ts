@@ -4,6 +4,9 @@ import {
   ContentsListingSchema,
   IssueCommentCreateResponseSchema,
 } from '../schemas';
+import { DEFAULT_OWNER, DEFAULT_REPO } from '../../defaults';
+
+const REPO_PATH = `${DEFAULT_OWNER}/${DEFAULT_REPO}`;
 
 describe('PullRequestSchema', () => {
   it('accepts a realistic open pull request payload', () => {
@@ -44,7 +47,7 @@ describe('ContentsListingSchema', () => {
         path: 'specs/191-spec-navigator/spec.md',
         type: 'file',
         size: 1234,
-        download_url: 'https://raw.githubusercontent.com/debrief/debrief-future/abc/spec.md',
+        download_url: `https://raw.githubusercontent.com/${REPO_PATH}/abc/spec.md`,
       },
     ]);
     expect(result.success).toBe(true);
@@ -62,7 +65,7 @@ describe('IssueCommentCreateResponseSchema', () => {
   it('accepts a typical POST-comment response', () => {
     const result = IssueCommentCreateResponseSchema.safeParse({
       id: 123,
-      html_url: 'https://github.com/debrief/debrief-future/pull/42#issuecomment-123',
+      html_url: `https://github.com/${REPO_PATH}/pull/42#issuecomment-123`,
       created_at: '2026-04-17T00:00:00Z',
       author_association: 'CONTRIBUTOR',
     });

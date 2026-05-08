@@ -3,13 +3,14 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { ArtifactView } from '../ArtifactView';
 import type { Artefact, FeatureScope } from '../../types';
 import { setPat, clearPat, _resetCacheForTests } from '../../github/auth';
+import { DEFAULT_OWNER, DEFAULT_REPO } from '../../defaults';
 
 const SHA = 'a'.repeat(40);
 
 const SCOPE: FeatureScope = {
   prNumber: 42,
-  repoOwner: 'debrief',
-  repoName: 'debrief-future',
+  repoOwner: DEFAULT_OWNER,
+  repoName: DEFAULT_REPO,
   headSha: SHA,
   featureFolder: 'specs/191-spec-navigator',
 };

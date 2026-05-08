@@ -8,6 +8,7 @@ import {
   fetchPullRequest,
 } from '../github/api';
 import { subscribePat } from '../github/auth';
+import { DEFAULT_OWNER, DEFAULT_REPO } from '../defaults';
 import { strings } from '../strings';
 
 export interface UseFeatureResult {
@@ -102,8 +103,8 @@ export function useFeature(prNumber: number | null): UseFeatureResult {
         }
         const nextScope: FeatureScope = {
           prNumber,
-          repoOwner: 'debrief',
-          repoName: 'debrief-future',
+          repoOwner: DEFAULT_OWNER,
+          repoName: DEFAULT_REPO,
           headSha: pr.head.sha,
           featureFolder: folder,
         };

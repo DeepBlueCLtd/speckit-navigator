@@ -15,14 +15,15 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { MarkdownView } from '../MarkdownView';
 import type { FeatureScope } from '../../types';
+import { DEFAULT_OWNER, DEFAULT_REPO } from '../../defaults';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const SCOPE: FeatureScope = {
   prNumber: 1,
-  repoOwner: 'debrief',
-  repoName: 'debrief-future',
+  repoOwner: DEFAULT_OWNER,
+  repoName: DEFAULT_REPO,
   headSha: '0'.repeat(40),
   featureFolder: 'specs/191-spec-navigator',
 };

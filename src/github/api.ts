@@ -6,6 +6,7 @@
 
 import { z } from 'zod';
 import { strings } from '../strings';
+import { DEFAULT_OWNER, DEFAULT_REPO } from '../defaults';
 import { getPat } from './auth';
 import {
   PullRequestSchema,
@@ -22,9 +23,6 @@ import type { AppError } from '../types';
 
 const API_BASE = 'https://api.github.com';
 const RAW_BASE = 'https://raw.githubusercontent.com';
-
-const DEFAULT_OWNER = 'debrief';
-const DEFAULT_REPO = 'debrief-future';
 
 export interface ApiOptions {
   owner?: string;

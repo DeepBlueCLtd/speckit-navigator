@@ -3,6 +3,8 @@
  * Future translation: replace the default export with a locale-resolving function.
  */
 
+import { DEFAULT_REPO_LABEL } from './defaults';
+
 export const strings = {
   app: {
     title: 'Spec Navigator',
@@ -66,8 +68,7 @@ export const strings = {
   settings: {
     title: 'GitHub credential',
     patLabel: 'Fine-grained PAT',
-    patHelp:
-      'Generate a fine-grained personal access token scoped to debrief/debrief-future with permissions: "Contents: Read" and "Pull requests: Read and Write".',
+    patHelp: `Generate a fine-grained personal access token scoped to ${DEFAULT_REPO_LABEL} with permissions: "Contents: Read" and "Pull requests: Read and Write".`,
     patCreateUrl: 'https://github.com/settings/personal-access-tokens/new',
     patCreateLink: 'Open GitHub PAT settings',
     patStored: 'A token is stored on this device only.',
@@ -100,12 +101,12 @@ export const strings = {
   openPrList: {
     heading: 'Did you mean one of these open pull requests?',
     loading: 'Looking up open pull requests…',
-    empty: 'No open pull requests on debrief/debrief-future.',
+    empty: `No open pull requests on ${DEFAULT_REPO_LABEL}.`,
     failed: 'Could not load the list of open pull requests.',
   },
   specBrowser: {
     openButton: 'Browse open PRs',
-    modalTitle: 'Open pull requests on debrief/debrief-future',
+    modalTitle: `Open pull requests on ${DEFAULT_REPO_LABEL}`,
     closeButton: 'Close',
     authRequired: 'A GitHub token is required to list open pull requests. Open settings first.',
   },
