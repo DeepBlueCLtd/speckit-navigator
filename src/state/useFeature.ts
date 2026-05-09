@@ -6,6 +6,7 @@ import {
   fetchChangedFiles,
   fetchContentsListing,
   fetchPullRequest,
+  type ApiOptions,
 } from '../github/api';
 import { subscribePat } from '../github/auth';
 import { DEFAULT_OWNER, DEFAULT_REPO } from '../defaults';
@@ -18,6 +19,12 @@ export interface UseFeatureResult {
   error: AppError | null;
 }
 
+export interface UseFeatureInput {
+  prNumber: number | null;
+  branch?: string | null;
+  apiOptions?: ApiOptions;
+}
+
 const FEATURE_FOLDER_RE = /^(specs\/\d{3,}-[a-z0-9-]+)\//;
 
 function pickFeatureFolder(changedPaths: string[]): string | null {
@@ -28,13 +35,17 @@ function pickFeatureFolder(changedPaths: string[]): string | null {
   return null;
 }
 
-async function listArtefacts(folder: string, ref: string): Promise<Artefact[]> {
+async function listArtefacts(
+  folder: string,
+  ref: string,
+  apiOptions: ApiOptions = {},
+): Promise<Artefact[]> {
   const out: Artefact[] = [];
-  const entries = await fetchContentsListing(folder, ref);
+  const entries = await fetchContentsListing(folder, ref, apiOptions);
   for (const entry of entries) {
     if (entry.type === 'dir') {
       if (/(contracts|evidence|checklists|screenshots|media)$/.test(entry.path)) {
-        const subEntries = await fetchContentsListing(entry.path, ref);
+        const subEntries = await fetchContentsListing(entry.path, ref, apiOptions);
         for (const sub of subEntries) {
           if (sub.type !== 'file') continue;
           out.push(toArtefact(sub));
@@ -67,12 +78,34 @@ function toArtefact(entry: {
   };
 }
 
-export function useFeature(prNumber: number | null): UseFeatureResult {
+async function pickFeatureFolderOnBranch(
+  ref: string,
+  apiOptions: ApiOptions,
+): Promise<string | null> {
+  const entries = await fetchContentsListing('specs', ref, apiOptions);
+  for (const entry of entries) {
+    if (entry.type === 'dir' && /^specs\/\d{3,}-[a-z0-9-]+$/.test(entry.path)) {
+      return entry.path;
+    }
+  }
+  return null;
+}
+
+export function useFeature(
+  arg: number | null | UseFeatureInput,
+): UseFeatureResult {
+  const input: UseFeatureInput =
+    arg === null || typeof arg === 'number' ? { prNumber: arg } : arg;
+  const prNumber = input.prNumber;
+  const branch = input.branch ?? null;
+  const apiOptions = input.apiOptions ?? {};
+  const owner = apiOptions.owner ?? DEFAULT_OWNER;
+  const repo = apiOptions.repo ?? DEFAULT_REPO;
+
   const [scope, setScope] = useState<FeatureScope | null>(null);
   const [artefacts, setArtefacts] = useState<Artefact[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<AppError | null>(null);
-  // Bump this counter whenever the PAT changes so the fetch effect re-runs.
   const [patVersion, setPatVersion] = useState<number>(0);
 
   useEffect(() => {
@@ -81,16 +114,45 @@ export function useFeature(prNumber: number | null): UseFeatureResult {
   }, []);
 
   useEffect(() => {
-    if (prNumber === null) return;
+    if (prNumber === null && branch === null) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
 
     (async (): Promise<void> => {
       try {
-        const pr = await fetchPullRequest(prNumber);
-        const changedFiles = await fetchChangedFiles(prNumber);
-        const folder = pickFeatureFolder(changedFiles);
+        if (prNumber !== null) {
+          const pr = await fetchPullRequest(prNumber, apiOptions);
+          const changedFiles = await fetchChangedFiles(prNumber, apiOptions);
+          const folder = pickFeatureFolder(changedFiles);
+          if (!folder) {
+            if (!cancelled) {
+              setError({
+                kind: 'no-feature-folder',
+                message: strings.errors.noFeatureFolder,
+              });
+              setLoading(false);
+            }
+            return;
+          }
+          const nextScope: FeatureScope = {
+            prNumber,
+            repoOwner: owner,
+            repoName: repo,
+            headSha: pr.head.sha,
+            featureFolder: folder,
+          };
+          const list = await listArtefacts(folder, pr.head.sha, apiOptions);
+          if (cancelled) return;
+          setScope(nextScope);
+          setArtefacts(list);
+          setLoading(false);
+          return;
+        }
+
+        // branch-only mode: list specs/ on the branch and pick the first
+        // feature folder. Comments are disabled (prNumber is null in scope).
+        const folder = await pickFeatureFolderOnBranch(branch as string, apiOptions);
         if (!folder) {
           if (!cancelled) {
             setError({
@@ -102,13 +164,13 @@ export function useFeature(prNumber: number | null): UseFeatureResult {
           return;
         }
         const nextScope: FeatureScope = {
-          prNumber,
-          repoOwner: DEFAULT_OWNER,
-          repoName: DEFAULT_REPO,
-          headSha: pr.head.sha,
+          prNumber: null,
+          repoOwner: owner,
+          repoName: repo,
+          headSha: branch as string,
           featureFolder: folder,
         };
-        const list = await listArtefacts(folder, pr.head.sha);
+        const list = await listArtefacts(folder, branch as string, apiOptions);
         if (cancelled) return;
         setScope(nextScope);
         setArtefacts(list);
@@ -127,7 +189,7 @@ export function useFeature(prNumber: number | null): UseFeatureResult {
     return () => {
       cancelled = true;
     };
-  }, [prNumber, patVersion]);
+  }, [prNumber, branch, owner, repo, patVersion]);
 
   return { scope, artefacts, loading, error };
 }

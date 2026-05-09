@@ -11,22 +11,18 @@ import { OpenPrList } from './components/OpenPrList';
 import { SpecBrowserModal } from './components/SpecBrowserModal';
 import { useFeature } from './state/useFeature';
 import { useComments } from './state/useComments';
+import { parseUrlParams } from './state/parseUrlParams';
 import { hasPat, subscribePat } from './github/auth';
 import type { Artefact, Comment, SelectionContext } from './types';
 
 const READ_ONLY_HINT_DISMISSED_KEY = 'spec-navigator:read-only-hint-dismissed';
 
-function parsePrNumber(): number | null {
-  const params = new URLSearchParams(window.location.search);
-  const raw = params.get('pr');
-  if (!raw) return null;
-  const n = Number.parseInt(raw, 10);
-  if (!Number.isFinite(n) || n <= 0) return null;
-  return n;
-}
-
 export function App(): JSX.Element {
-  const [prNumber] = useState<number | null>(() => parsePrNumber());
+  const [urlParams] = useState(() => parseUrlParams(window.location.search));
+  const { prNumber, branch, owner, repo, warnings } = urlParams;
+  useEffect(() => {
+    for (const w of warnings) console.warn(`[spec-navigator] ${w}`);
+  }, [warnings]);
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [specBrowserOpen, setSpecBrowserOpen] = useState<boolean>(false);
   const [composerOpen, setComposerOpen] = useState<boolean>(false);
@@ -44,7 +40,11 @@ export function App(): JSX.Element {
     return subscribePat(() => setPatPresent(hasPat()));
   }, []);
 
-  const feature = useFeature(prNumber);
+  const feature = useFeature({
+    prNumber,
+    branch,
+    apiOptions: { owner, repo },
+  });
   const comments = useComments(prNumber, feature.scope?.headSha);
 
   const dismissReadOnlyHint = (): void => {
@@ -64,7 +64,7 @@ export function App(): JSX.Element {
 
   const selectedArtefact: Artefact | undefined = feature.artefacts.find((a) => a.path === selectedPath);
 
-  if (prNumber === null) {
+  if (prNumber === null && branch === null) {
     return (
       <div className="app-missing-pr">
         <h1>{strings.app.title}</h1>
@@ -126,14 +126,16 @@ export function App(): JSX.Element {
           >
             {strings.buttons.commentFeature}
           </button>
-          <SubmitButton
-            prNumber={prNumber}
-            comments={comments.state.comments}
-            originalHeadSha={feature.scope?.headSha}
-            onSuccess={() => {
-              comments.clearAll();
-            }}
-          />
+          {prNumber !== null && (
+            <SubmitButton
+              prNumber={prNumber}
+              comments={comments.state.comments}
+              originalHeadSha={feature.scope?.headSha}
+              onSuccess={() => {
+                comments.clearAll();
+              }}
+            />
+          )}
           <button
             type="button"
             className="btn btn-secondary"
