@@ -1,77 +1,88 @@
-# @debrief/spec-navigator
+# spec-navigator
 
-Static, browser-based review surface for spec feedback on Debrief pull requests.
-The reviewer loads `?pr=<n>`, reads every artefact in the feature's `specs/NNN-*/`
-folder, captures feedback at selection / document / feature granularity, and
-submits the batch as a single structured PR comment.
+Browser-based viewer for [speckit](https://github.com/github/spec-kit) specifications. Renders any GitHub repository's `specs/NNN-name/` artefacts (`spec.md`, `plan.md`, `tasks.md`, `evidence/`, `contracts/`, …) with markdown rendering, inline review comments, and one-click feedback submission as a PR comment.
 
-**Published at**: `https://debrief.github.io/debrief-future/spec-navigator/`
+This repository was extracted from [`debrief/debrief-future`](https://github.com/debrief/debrief-future) — see that repo's spec at `specs/248-extract-spec-navigator/` for the rationale.
 
-## Reviewer setup (one-time per device)
+**Hosted instance**: <https://debrief.github.io/spec-navigator/>
 
-1. Generate a **fine-grained personal access token** at
-   <https://github.com/settings/personal-access-tokens/new>:
-   - **Resource owner**: `debrief`
-   - **Repository access**: `debrief/debrief-future`
-   - **Permissions**:
-     - `Contents: Read` (to read spec artefacts)
-     - `Pull requests: Read and Write` (to post the consolidated PR comment)
-2. Open the navigator from any PR's body link (or directly at the URL above with
-   `?pr=<num>` appended).
-3. Click the **⚙ settings** icon, paste the PAT, click **Save token**. The token
-   is stored only in `localStorage` on this device and is sent only to GitHub.
-4. Review the spec. Click **Submit feedback** to post a single consolidated PR
-   comment.
+## Quick start (consumers)
 
-## Local development
+You don't need to install anything to *use* spec-navigator. Open the hosted instance with a query string pointing at the repo and branch you want to view.
+
+```
+# View the default debrief-future spec list (no parameters required)
+https://debrief.github.io/spec-navigator/
+
+# View any GitHub repo by ?repo= and ?branch=
+https://debrief.github.io/spec-navigator/?repo=octocat/hello-world&branch=main
+
+# Legacy form — debrief-future PR shortcut (equivalent to ?repo=debrief/debrief-future&branch=<pr-branch>)
+https://debrief.github.io/spec-navigator/?pr=123
+```
+
+See [CONFIGURATION.md](./CONFIGURATION.md) for the full URL contract and the build-time env vars.
+
+## Quick start (contributors)
 
 ```sh
-pnpm --filter @debrief/spec-navigator dev       # Vite dev server
-pnpm --filter @debrief/spec-navigator build     # tsc + vite build → dist/
-pnpm --filter @debrief/spec-navigator test      # Vitest unit tests
-node apps/spec-navigator/run-playwright.mjs     # Playwright E2E (cloud/CI)
+git clone https://github.com/debrief/spec-navigator.git
+cd spec-navigator
+pnpm install
+pnpm dev          # local dev server
+pnpm test         # vitest, no GitHub network
+pnpm test:e2e     # Playwright with bundled fixtures (default)
+pnpm lint
+pnpm typecheck
 ```
 
-## Branch preview deploys
+You do **not** need a GitHub token to produce a green local build. The Playwright tests run against bundled HTTP fixtures by default.
 
-A branch can be published alongside production for end-to-end testing without
-merging. Two trigger modes:
+To run E2E tests against the live GitHub API (used by the nightly `live.yml` CI workflow):
 
-- **Automatic**: push to any branch matching `preview/**` — the workflow runs
-  on paths `apps/spec-navigator/**` or the preview workflow file itself.
-- **Manual**: GitHub UI → Actions → *Preview Spec Navigator (branch)* →
-  **Run workflow** → pick the branch.
-
-URL pattern:
-
-```
-https://debrief.github.io/debrief-future/spec-navigator-preview/<slug>/?pr=<n>
+```sh
+LIVE_GITHUB=1 GITHUB_TOKEN=<your-PAT> pnpm test:e2e:live
 ```
 
-`<slug>` is the branch name with non-`[A-Za-z0-9-]` characters replaced by
-`-`. Previews share the `gh-pages` branch with production under
-`keep_files: true` so this workflow never overwrites `/spec-navigator/`.
-Delete a preview by removing its folder from `gh-pages` directly.
+## Configuration
 
-See `.github/workflows/spec-navigator-preview.yml`.
+Three things are configurable: the default repo, vendor branding, and the Vite base path. All three have sensible defaults baked in for the hosted instance, so most adopters won't need to change them.
 
-## Troubleshooting
+| What | How | Default |
+|---|---|---|
+| Default repo (when no `?repo=` in URL) | `VITE_DEFAULT_OWNER`, `VITE_DEFAULT_REPO` (build-time env vars) | `debrief/debrief-future` |
+| Vite base path | `VITE_BASE` (build-time env var) | `/spec-navigator/` |
+| Per-request consumer | `?repo=<org>/<name>` + `?branch=<branch>` (URL params) | falls back to env defaults |
 
-- **"Not authenticated"** — Open settings and paste a PAT. Permission scope
-  documented on the settings panel itself.
-- **"PR not found"** — Your PAT cannot see the target repo. Regenerate with
-  the correct resource owner.
-- **"Rate limit hit"** — GitHub's authenticated rate limit is 5000/h; if hit,
-  wait an hour or use a different PAT.
-- **Draft lost** — Drafts are persisted to `localStorage` under
-  `spec-navigator:drafts:pr-<num>`. If clearing browser data is unavoidable,
-  submit before doing so.
+See [CONFIGURATION.md](./CONFIGURATION.md) for full details.
 
-## Architecture
+## Self-hosting
 
-- Zero backend. Static SPA hosted on GitHub Pages.
-- CSP meta tag on `index.html` restricts `connect-src` to
-  `api.github.com` and `raw.githubusercontent.com`, so a compromised
-  transitive dependency cannot exfiltrate the PAT.
-- GitHub REST responses narrowed via `zod` at the fetch boundary (`src/github/schemas.ts`).
-- Drafts persisted per-PR in `localStorage`; cleared automatically on successful submit.
+The hosted instance at `https://debrief.github.io/spec-navigator/` is sufficient for most consumers — you select your repo via URL parameters at view time. Self-hosting is only needed if you want to:
+
+- bake a different default repo into the build, or
+- host under a different path or domain, or
+- host a private fork with a custom branding.
+
+To self-host:
+
+1. Fork this repository.
+2. Set `VITE_DEFAULT_OWNER`, `VITE_DEFAULT_REPO`, and `VITE_BASE` in your fork's Pages deploy environment (or `VITE_BASE` repo variable).
+3. If your repo is private, register a `GITHUB_TOKEN` Actions secret with `metadata:read` and `contents:read` on the target repo (and `repo` if private).
+4. Update `live.yml` to point its smoke-test target at your repo (the default targets `debrief/debrief-future`).
+
+Three steps. No further changes needed — the same URL contract works for any consumer.
+
+## Architecture (one-paragraph summary)
+
+A static React + Vite SPA. No backend. Reads from the GitHub REST + raw-content APIs at request time, validated through Zod at the boundary. Optionally posts comments to PRs via the user's PAT (stored in `localStorage`, never URL-bound). E2E tests run against HTTP fixtures by default; live mode hits real GitHub.
+
+For deep dives, see the spec at the source repository: <https://github.com/debrief/debrief-future/tree/main/specs/248-extract-spec-navigator>.
+
+## Licensing
+
+Same licence as the source repository (`debrief/debrief-future`). See `LICENSE`.
+
+## Security
+
+PATs live in `localStorage` only — never in URLs, never in logs. See [SECURITY.md](./SECURITY.md) for token-rotation policy and reporting procedures.

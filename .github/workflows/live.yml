@@ -1,0 +1,82 @@
+name: live
+
+on:
+  schedule:
+    # Nightly at 03:00 UTC.
+    - cron: "0 3 * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "20.x"
+
+jobs:
+  playwright-live:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v3
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install chromium --with-deps
+      - id: live-mode
+        run: pnpm test:e2e:live
+        env:
+          LIVE_GITHUB: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-live
+          path: playwright-report/
+          if-no-files-found: ignore
+
+  open-failure-issue:
+    runs-on: ubuntu-latest
+    needs: playwright-live
+    if: failure()
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "live-mode CI is failing";
+            const label = "live-mode-failure";
+            const body = [
+              "Live-mode Playwright run failed in workflow `live.yml`.",
+              "",
+              `Run: ${context.payload.repository.html_url}/actions/runs/${context.runId}`,
+              "",
+              "If this is a transient GitHub-side issue, close this issue and the next nightly will reopen if it persists. Persistent failures may indicate GitHub API drift; refresh fixtures with `pnpm fixtures:record` if so.",
+            ].join("\n");
+
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: label,
+            });
+
+            if (open.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: [label],
+              });
+            } else {
+              const issue = open.data[0];
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body,
+              });
+            }
