@@ -118,12 +118,13 @@ export function useFeature(
     let cancelled = false;
     setLoading(true);
     setError(null);
+    const effectApiOptions: ApiOptions = { owner, repo };
 
     (async (): Promise<void> => {
       try {
         if (prNumber !== null) {
-          const pr = await fetchPullRequest(prNumber, apiOptions);
-          const changedFiles = await fetchChangedFiles(prNumber, apiOptions);
+          const pr = await fetchPullRequest(prNumber, effectApiOptions);
+          const changedFiles = await fetchChangedFiles(prNumber, effectApiOptions);
           const folder = pickFeatureFolder(changedFiles);
           if (!folder) {
             if (!cancelled) {
@@ -142,7 +143,7 @@ export function useFeature(
             headSha: pr.head.sha,
             featureFolder: folder,
           };
-          const list = await listArtefacts(folder, pr.head.sha, apiOptions);
+          const list = await listArtefacts(folder, pr.head.sha, effectApiOptions);
           if (cancelled) return;
           setScope(nextScope);
           setArtefacts(list);
@@ -152,7 +153,7 @@ export function useFeature(
 
         // branch-only mode: list specs/ on the branch and pick the first
         // feature folder. Comments are disabled (prNumber is null in scope).
-        const folder = await pickFeatureFolderOnBranch(branch as string, apiOptions);
+        const folder = await pickFeatureFolderOnBranch(branch as string, effectApiOptions);
         if (!folder) {
           if (!cancelled) {
             setError({
@@ -170,7 +171,7 @@ export function useFeature(
           headSha: branch as string,
           featureFolder: folder,
         };
-        const list = await listArtefacts(folder, branch as string, apiOptions);
+        const list = await listArtefacts(folder, branch as string, effectApiOptions);
         if (cancelled) return;
         setScope(nextScope);
         setArtefacts(list);

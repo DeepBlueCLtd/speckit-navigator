@@ -38,7 +38,7 @@ export interface Artefact {
 }
 
 export interface FeatureScope {
-  prNumber: number;
+  prNumber: number | null;
   repoOwner: string;
   repoName: string;
   headSha: string;
