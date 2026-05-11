@@ -9,16 +9,14 @@ env:
   NODE_VERSION: "20.x"
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: pages-main
   cancel-in-progress: false
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,21 +25,21 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - uses: pnpm/action-setup@v3
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-        env:
-          # Default base path. Override via repo variable VITE_BASE if hosting elsewhere.
-          VITE_BASE: ${{ vars.VITE_BASE || '/speckit-navigator/' }}
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Build
+        run: pnpm build
+        env:
+          VITE_BASE: ${{ vars.VITE_BASE || '/speckit-navigator/' }}
+          VITE_DEFAULT_OWNER: ${{ vars.VITE_DEFAULT_OWNER || 'DeepBlueCLtd' }}
+          VITE_DEFAULT_REPO: ${{ vars.VITE_DEFAULT_REPO || 'speckit-navigator' }}
+
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: gh-pages
+          # Don't wipe per-PR previews when main redeploys.
+          clean-exclude: |
+            previews
+          single-commit: false
+          commit-message: "deploy: main @ ${{ github.sha }}"

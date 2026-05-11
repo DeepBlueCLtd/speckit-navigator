@@ -73,6 +73,23 @@ To self-host:
 
 Three steps. No further changes needed — the same URL contract works for any consumer.
 
+## Per-PR preview deployments
+
+Every PR gets a preview at `https://deepbluecltd.github.io/speckit-navigator/previews/pr-<number>/`. The `pr-preview.yml` workflow builds the app with a PR-scoped `VITE_BASE`, deploys to the `gh-pages` branch under `previews/pr-<number>/`, and posts (or updates) a comment on the PR with the URL plus a few sample link shapes. When the PR closes, `pr-preview-cleanup.yml` removes that folder.
+
+The bundled `specs/237-active-storyboard-persistence/` is the dummy speckit document-set the preview renders by default (copied from `debrief/debrief-future` so a reviewer with no extra config can confirm the renderer works).
+
+### One-time Pages setup
+
+Pages must be configured to deploy from the `gh-pages` branch, not from GitHub Actions:
+
+1. Open repo Settings → Pages.
+2. Source: **Deploy from a branch**.
+3. Branch: `gh-pages`, folder: `/ (root)`.
+4. Save.
+
+The `gh-pages` branch is created on the first preview push, so trigger any PR build first (or push to `main`) before flipping the source.
+
 ## Architecture (one-paragraph summary)
 
 A static React + Vite SPA. No backend. Reads from the GitHub REST + raw-content APIs at request time, validated through Zod at the boundary. Optionally posts comments to PRs via the user's PAT (stored in `localStorage`, never URL-bound). E2E tests run against HTTP fixtures by default; live mode hits real GitHub.
