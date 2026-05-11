@@ -1,0 +1,45 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "20.x"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages-main
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v3
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+        env:
+          VITE_BASE: ${{ vars.VITE_BASE || '/speckit-navigator/' }}
+          VITE_DEFAULT_OWNER: ${{ vars.VITE_DEFAULT_OWNER || 'DeepBlueCLtd' }}
+          VITE_DEFAULT_REPO: ${{ vars.VITE_DEFAULT_REPO || 'speckit-navigator' }}
+
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: gh-pages
+          # Don't wipe per-PR previews when main redeploys.
+          clean-exclude: |
+            previews
+          single-commit: false
+          commit-message: "deploy: main @ ${{ github.sha }}"
