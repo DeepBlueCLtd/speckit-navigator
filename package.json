@@ -1,5 +1,5 @@
 {
-  "name": "@debrief/spec-navigator",
+  "name": "@deepbluecltd/speckit-navigator",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -11,7 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:live": "LIVE_GITHUB=1 playwright test",
     "test:e2e:cloud": "node run-playwright.mjs",
+    "fixtures:record": "node scripts/record-fixtures.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx"
   },

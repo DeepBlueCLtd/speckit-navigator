@@ -1,6 +1,6 @@
 # Configuration reference
 
-spec-navigator has a deliberately small configuration surface: two build-time env vars for the default consumer, one for the Vite base path, and a small URL contract for selecting the per-request consumer.
+speckit-navigator has a deliberately small configuration surface: two build-time env vars for the default consumer, one for the Vite base path, and a small URL contract for selecting the per-request consumer.
 
 There is **no** runtime config file, no `Configuration` JSON Schema, and no in-app settings UI for choosing the target repo. The decision (recorded as `/speckit.review` decision 2A in the source spec at `debrief/debrief-future:specs/248-extract-spec-navigator/`) was that the existing `ApiOptions` typed seam plus three named constants in `strings.ts` is sufficient — adding a `Configuration` entity would just duplicate the seam without earning its keep.
 
@@ -12,7 +12,7 @@ Set these as repository variables (Settings → Secrets and variables → Action
 |---|---|---|---|
 | `VITE_DEFAULT_OWNER` | GitHub org / user owning the default consumer | `debrief` | `src/defaults.ts` |
 | `VITE_DEFAULT_REPO` | Repo name owned by `VITE_DEFAULT_OWNER` | `debrief-future` | `src/defaults.ts` |
-| `VITE_BASE` | Path the SPA is hosted at | `/spec-navigator/` | `vite.config.ts` |
+| `VITE_BASE` | Path the SPA is hosted at | `/speckit-navigator/` | `vite.config.ts` |
 
 When all three URL-contract parameters are absent (no `?repo=`, no `?branch=`, no `?pr=`), the SPA loads with the build-time defaults baked in by these variables.
 
@@ -48,19 +48,19 @@ Unknown parameters are silently ignored to keep deep-links forward-compatible.
 
 ```
 # Default — VITE_DEFAULT_OWNER / VITE_DEFAULT_REPO
-https://debrief.github.io/spec-navigator/
+https://deepbluecltd.github.io/speckit-navigator/
 
 # Legacy form — debrief-future PR shortcut
-https://debrief.github.io/spec-navigator/?pr=512
+https://deepbluecltd.github.io/speckit-navigator/?pr=512
 
 # New form — non-debrief consumer
-https://debrief.github.io/spec-navigator/?repo=acme/our-platform
+https://deepbluecltd.github.io/speckit-navigator/?repo=acme/our-platform
 
 # Specific branch on the default repo
-https://debrief.github.io/spec-navigator/?repo=debrief/debrief-future&branch=claude/foo
+https://deepbluecltd.github.io/speckit-navigator/?repo=debrief/debrief-future&branch=claude/foo
 
 # Deep link to a feature folder
-https://debrief.github.io/spec-navigator/?repo=acme/foo&branch=main#/specs/123-bar
+https://deepbluecltd.github.io/speckit-navigator/?repo=acme/foo&branch=main#/specs/123-bar
 ```
 
 ## PAT scoping
@@ -69,7 +69,7 @@ The user's PAT is associated with the `repo` parameter at the time it was saved.
 
 ## Self-hosting checklist
 
-To deploy a forked spec-navigator pointing at your own repo:
+To deploy a forked speckit-navigator pointing at your own repo:
 
 1. Fork this repository to your org.
 2. In your fork, set `VITE_DEFAULT_OWNER` and `VITE_DEFAULT_REPO` (Variables) to your repo's coordinates.

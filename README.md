@@ -1,24 +1,24 @@
-# spec-navigator
+# speckit-navigator
 
 Browser-based viewer for [speckit](https://github.com/github/spec-kit) specifications. Renders any GitHub repository's `specs/NNN-name/` artefacts (`spec.md`, `plan.md`, `tasks.md`, `evidence/`, `contracts/`, …) with markdown rendering, inline review comments, and one-click feedback submission as a PR comment.
 
 This repository was extracted from [`debrief/debrief-future`](https://github.com/debrief/debrief-future) — see that repo's spec at `specs/248-extract-spec-navigator/` for the rationale.
 
-**Hosted instance**: <https://debrief.github.io/spec-navigator/>
+**Hosted instance**: <https://deepbluecltd.github.io/speckit-navigator/>
 
 ## Quick start (consumers)
 
-You don't need to install anything to *use* spec-navigator. Open the hosted instance with a query string pointing at the repo and branch you want to view.
+You don't need to install anything to *use* speckit-navigator. Open the hosted instance with a query string pointing at the repo and branch you want to view.
 
 ```
 # View the default debrief-future spec list (no parameters required)
-https://debrief.github.io/spec-navigator/
+https://deepbluecltd.github.io/speckit-navigator/
 
 # View any GitHub repo by ?repo= and ?branch=
-https://debrief.github.io/spec-navigator/?repo=octocat/hello-world&branch=main
+https://deepbluecltd.github.io/speckit-navigator/?repo=octocat/hello-world&branch=main
 
 # Legacy form — debrief-future PR shortcut (equivalent to ?repo=debrief/debrief-future&branch=<pr-branch>)
-https://debrief.github.io/spec-navigator/?pr=123
+https://deepbluecltd.github.io/speckit-navigator/?pr=123
 ```
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for the full URL contract and the build-time env vars.
@@ -26,8 +26,8 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for the full URL contract and the bui
 ## Quick start (contributors)
 
 ```sh
-git clone https://github.com/debrief/spec-navigator.git
-cd spec-navigator
+git clone https://github.com/DeepBlueCLtd/speckit-navigator.git
+cd speckit-navigator
 pnpm install
 pnpm dev          # local dev server
 pnpm test         # vitest, no GitHub network
@@ -51,14 +51,14 @@ Three things are configurable: the default repo, vendor branding, and the Vite b
 | What | How | Default |
 |---|---|---|
 | Default repo (when no `?repo=` in URL) | `VITE_DEFAULT_OWNER`, `VITE_DEFAULT_REPO` (build-time env vars) | `debrief/debrief-future` |
-| Vite base path | `VITE_BASE` (build-time env var) | `/spec-navigator/` |
+| Vite base path | `VITE_BASE` (build-time env var) | `/speckit-navigator/` |
 | Per-request consumer | `?repo=<org>/<name>` + `?branch=<branch>` (URL params) | falls back to env defaults |
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for full details.
 
 ## Self-hosting
 
-The hosted instance at `https://debrief.github.io/spec-navigator/` is sufficient for most consumers — you select your repo via URL parameters at view time. Self-hosting is only needed if you want to:
+The hosted instance at `https://deepbluecltd.github.io/speckit-navigator/` is sufficient for most consumers — you select your repo via URL parameters at view time. Self-hosting is only needed if you want to:
 
 - bake a different default repo into the build, or
 - host under a different path or domain, or

@@ -30,7 +30,7 @@ jobs:
       - run: pnpm build
         env:
           # Default base path. Override via repo variable VITE_BASE if hosting elsewhere.
-          VITE_BASE: ${{ vars.VITE_BASE || '/spec-navigator/' }}
+          VITE_BASE: ${{ vars.VITE_BASE || '/speckit-navigator/' }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

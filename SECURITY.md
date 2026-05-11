@@ -6,7 +6,7 @@ Email `security@debrief.dev` (or open a private security advisory via the GitHub
 
 ## PAT handling
 
-End-user PATs are stored in browser `localStorage`, scoped to the page origin (`https://debrief.github.io`). They are never:
+End-user PATs are stored in browser `localStorage`, scoped to the page origin (`https://deepbluecltd.github.io`). They are never:
 
 - placed in URLs (no `?token=` parameter is ever accepted),
 - echoed to logs,
@@ -43,7 +43,7 @@ Contributor turnover would silently break CI when the contributor's PAT expires 
 
 ## Adopter forks
 
-If you fork spec-navigator for a private repo, you will need a PAT with `repo` scope rather than the public-only scopes above. Document it in your fork's `SECURITY.md`. The CI surface remains the same; only the secret's contents differ.
+If you fork speckit-navigator for a private repo, you will need a PAT with `repo` scope rather than the public-only scopes above. Document it in your fork's `SECURITY.md`. The CI surface remains the same; only the secret's contents differ.
 
 ## Public-key fingerprints
 
