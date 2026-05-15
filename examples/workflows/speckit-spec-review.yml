@@ -1,0 +1,90 @@
+name: speckit-spec-review
+
+# Posts (or updates) a PR comment with a speckit-navigator link whenever the PR
+# adds a new spec folder under `specs/NNN-<slug>/`. Drop this file into your
+# repo at `.github/workflows/speckit-spec-review.yml` — no other configuration
+# is needed if you use the hosted navigator instance.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'specs/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: speckit-spec-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Detect new spec folders and upsert comment
+        uses: actions/github-script@v7
+        env:
+          # Override if you self-host the navigator. Trailing slash required.
+          NAVIGATOR_URL: https://deepbluecltd.github.io/speckit-navigator/
+        with:
+          script: |
+            const navigator = process.env.NAVIGATOR_URL;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pr = context.payload.pull_request;
+            const prNum = pr.number;
+            const branch = pr.head.ref;
+            const marker = '<!-- speckit-navigator-review -->';
+
+            // List every file the PR touches and pick out files whose path
+            // matches `specs/NNN-<slug>/...` with `status === 'added'`. We
+            // collapse to unique feature folders.
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner, repo, pull_number: prNum, per_page: 100,
+            });
+            const specFolderRe = /^specs\/(\d+-[A-Za-z0-9._-]+)\//;
+            const newFolders = new Set();
+            for (const f of files) {
+              if (f.status !== 'added') continue;
+              const m = specFolderRe.exec(f.filename);
+              if (m) newFolders.add(m[1]);
+            }
+
+            // Find any existing comment we previously posted so we can update
+            // in place rather than spamming the thread on every push.
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number: prNum, per_page: 100,
+            });
+            const existing = comments.find((c) => c.body && c.body.startsWith(marker));
+
+            if (newFolders.size === 0) {
+              // No new spec — remove a stale comment if one exists, but stay
+              // quiet otherwise. Don't post "nothing to review" noise.
+              if (existing) {
+                await github.rest.issues.deleteComment({
+                  owner, repo, comment_id: existing.id,
+                });
+              }
+              return;
+            }
+
+            const encBranch = encodeURIComponent(branch);
+            const lines = [marker, '### Review speckit specs in this PR', ''];
+            for (const folder of [...newFolders].sort()) {
+              const url = `${navigator}?repo=${owner}/${repo}&branch=${encBranch}#/specs/${folder}`;
+              lines.push(`- **\`specs/${folder}/\`** — [open in speckit-navigator](${url})`);
+            }
+            lines.push('', `_Last update: \`${pr.head.sha.substring(0, 7)}\`_`);
+            const body = lines.join('\n');
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existing.id, body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: prNum, body,
+              });
+            }
